@@ -124,37 +124,32 @@ SlotBooking/
 
 ## 📸 Screenshots
 
-### Student login Page
-![Student login](./screenshots/student.png)
-*Student login screen.*
+## 📸 Screenshots
 
-### Admin login Page
+### Student Login Page
+![Student login](./screenshots/student.png)
+
+### Admin Login Page
 ![Admin login](./screenshots/admin.png)
-*Admin login screen.*
 
 ### Student Dashboard
 ![Student Dashboard](./screenshots/availableslots.png)
-*Student dashboard screen.*
 
 ### Student Bookings
 ![Student Bookings](./screenshots/slotbookingconfirm(1).png)
 
-*Student bookings screen.*
-### Admin Examsetup
+### Admin Exam Setup
 ![Admin Examsetup](./screenshots/examsetup.png)
-*Admin examsetup screen.*
 
-### Department details
-![Department details](./screenshots/dept.png) 
-*Department details screen.*
+### Department Details
+![Department details](./screenshots/dept.png)
 
 ### Student Details
-![Student Details](./screenshots/studentsdetails.png) 
-*Student details screen.*
+![Student Details](./screenshots/studentsdetails.png)
 
-### Students Details Upload page 
-![Students Details Upload page](./screenshots/studentsupload.png) 
-*Students Details Upload page screen.*
+### Students Upload Page
+![Students Upload page](./screenshots/studentsupload.png)
+
 > **Note**: Screenshot images need to be added to a `screenshots` folder in the root directory.
 
 ## 🤝 Contributing
