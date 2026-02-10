@@ -29,6 +29,8 @@ public class StudentController {
 
     @Autowired
     private com.petbooking.repository.ExamQuotaRepository examQuotaRepository;
+    @Autowired
+    private com.petbooking.service.RedisService redisService;
 
     @GetMapping("/slots")
     public ResponseEntity<?> getAvailableSlots(Authentication auth) {
@@ -61,35 +63,39 @@ public class StudentController {
             String deptCode = student.getDepartment().getDeptCode();
             System.out.println("Student Dept: " + deptCode + ", CategoryType: " + categoryType);
 
-            // Get available exam quotas for student's department and category
-            var quotas = examQuotaRepository.findAvailableForStudent(deptCode, categoryType);
-            System.out.println("Found " + quotas.size() + " available quotas");
+            // Cache Key based on Dept and Category
+            String cacheKey = "slots:" + deptCode + ":" + categoryType;
 
-            // Transform quotas into response format the frontend expects
-            var response = quotas.stream().map(q -> {
-                var map = new java.util.HashMap<String, Object>();
-                map.put("slotId", q.getId());
-                map.put("examDate", q.getExam().getStartingDate().toString());
-                map.put("examName", q.getExam().getExamName());
-                map.put("startTime", "09:00");
-                map.put("endTime", "17:00");
-                map.put("maxCount", q.getMaxCount());
-                map.put("bookedCount", q.getCurrentFill());
-                map.put("available", q.getMaxCount() - q.getCurrentFill());
-                map.put("department", deptCode);
-                map.put("category",
-                        categoryType == 1 ? "Day Scholar" : categoryType == 2 ? "Hostel Boys" : "Hostel Girls");
+            // Fetch from Cache or DB (TTL: 10 seconds)
+            List<java.util.Map<String, Object>> response = redisService.getOrFetch(cacheKey, List.class, () -> {
+                // DB Fetch Logic
+                var quotas = examQuotaRepository.findAvailableForStudent(deptCode, categoryType);
+                System.out.println("Found " + quotas.size() + " available quotas from DB");
 
-                // Add quotas array for frontend compatibility
-                var quotaInfo = new java.util.HashMap<String, Object>();
-                quotaInfo.put("quotaId", q.getId());
-                quotaInfo.put("quotaCapacity", q.getMaxCount());
-                quotaInfo.put("bookedCount", q.getCurrentFill());
-                quotaInfo.put("department", java.util.Map.of("deptCode", deptCode));
-                map.put("quotas", java.util.List.of(quotaInfo));
+                return quotas.stream().map(q -> {
+                    var map = new java.util.HashMap<String, Object>();
+                    map.put("slotId", q.getId());
+                    map.put("examDate", q.getExam().getStartingDate().toString());
+                    map.put("examName", q.getExam().getExamName());
+                    map.put("startTime", "09:00");
+                    map.put("endTime", "17:00");
+                    map.put("maxCount", q.getMaxCount());
+                    map.put("bookedCount", q.getCurrentFill());
+                    map.put("available", q.getMaxCount() - q.getCurrentFill());
+                    map.put("department", deptCode);
+                    map.put("category",
+                            categoryType == 1 ? "Day Scholar" : categoryType == 2 ? "Hostel Boys" : "Hostel Girls");
 
-                return map;
-            }).toList();
+                    var quotaInfo = new java.util.HashMap<String, Object>();
+                    quotaInfo.put("quotaId", q.getId());
+                    quotaInfo.put("quotaCapacity", q.getMaxCount());
+                    quotaInfo.put("bookedCount", q.getCurrentFill());
+                    quotaInfo.put("department", java.util.Map.of("deptCode", deptCode));
+                    map.put("quotas", java.util.List.of(quotaInfo));
+
+                    return map;
+                }).toList();
+            }, 10L); // 10 Seconds TTL
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -103,6 +109,23 @@ public class StudentController {
         try {
             String rollNo = auth.getName();
             var result = bookingService.bookExamQuota(rollNo, request.getSlotId());
+
+            // Invalidate cache for all potential categories (Simplification: clear all
+            // related to this student's context if possible,
+            // or we could reconstruct the keys if we had the student object. For now, let's
+            // just clear the specific key if we can.)
+            // Since we don't have the student object handy without fetching, we'll fetch it
+            // or rely on the 10s TTL.
+            // Better: Fetch student to know which cache key to clear.
+
+            Student student = studentRepository.findById(rollNo).orElse(null);
+            if (student != null) {
+                Integer categoryType = student.getCategory() == Student.StudentCategory.DAY ? 1
+                        : student.getCategory() == Student.StudentCategory.HOSTEL_MALE ? 2 : 3;
+                String cacheKey = "slots:" + student.getDepartment().getDeptCode() + ":" + categoryType;
+                redisService.clearCache(cacheKey);
+            }
+
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
