@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "@/components/ui/toast";
 import { Loader2, Mail, User, Key, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
-axios.defaults.baseURL = "http://localhost:8080";
+
 
 export default function Login() {
     const [isAdmin, setIsAdmin] = useState(false);

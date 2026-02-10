@@ -23,6 +23,8 @@ public class AdminController {
     private BookingRepository bookingRepository;
     @Autowired
     private com.petbooking.repository.DepartmentRepository departmentRepository;
+    @Autowired
+    private com.petbooking.repository.ExamQuotaRepository quotaRepository;
 
     @GetMapping("/departments")
     public ResponseEntity<?> getAllDepartments() {

@@ -44,11 +44,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Route - Login */}
-      <Route path="/login" element={
-        <PublicRoute>
-          <Login />
-        </PublicRoute>
-      } />
+      <Route path="/login" element={<Login />} />
 
       {/* Student Routes - Protected */}
       <Route path="/student" element={
